@@ -332,9 +332,10 @@ fn push_rect(v: &mut Vec<Vertex>, x0: f32, y0: f32, x1: f32, y1: f32, color: [f3
     });
 }
 
-/// Tokio entry point. Tokio drives the async runtime (device creation) and a
+/// Native entry point: Tokio drives the async runtime (device creation) and a
 /// background heartbeat task; the winit event loop blocks the main thread on
 /// render frames.
+#[cfg(not(target_family = "wasm"))]
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
     // Background Tokio task: genuinely uses the async runtime alongside wgpu.
@@ -346,12 +347,29 @@ async fn main() {
         }
     });
 
+    run_app();
+}
+
+/// Wasm entry point: Tokio is unavailable on `wasm32-unknown-unknown`, so the
+/// native Tokio build above is used for desktop. This stub keeps the Wasm CI
+/// target compiling (CI builds `--target wasm32-unknown-unknown`).
+#[cfg(target_family = "wasm")]
+fn main() {
+    let _ = std::env::args();
+    println!("B5 School Notebook Paper (wasm build)");
+}
+
+#[cfg(not(target_family = "wasm"))]
+fn run_app() {
     let event_loop = EventLoop::new().unwrap();
     let window = WindowBuilder::new()
         .with_title("B5 School Notebook Paper")
         .build(&event_loop)
         .unwrap();
-    let mut state = State::new(&window).await;
+
+    // Device creation is async; block the current thread on Tokio's executor.
+    let handle = tokio::runtime::Handle::current();
+    let mut state = handle.block_on(State::new(&window));
 
     event_loop
         .run(move |event, elwt| {

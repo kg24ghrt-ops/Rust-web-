@@ -6,5 +6,7 @@ edition = "2024"
 [dependencies]
 wgpu = "0.20"
 winit = "0.30"
-tokio = { version = "1", features = ["full"] }
 bytemuck = "1"
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+tokio = { version = "1", features = ["full"] }
