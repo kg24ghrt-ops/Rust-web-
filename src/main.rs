@@ -17,7 +17,7 @@
 
 use std::borrow::Cow;
 
-use bytemuck::{Pod, Zeroable};
+use bytemuck::{NoUninit, Pod, Zeroable};
 use wgpu::util::DeviceExt;
 use winit::{
     event::*,
@@ -43,7 +43,7 @@ const MARGIN_FRAC: f32 = 0.05; // left margin width as fraction of paper height
 const RULE_COUNT: usize = 34; // number of ruled lines
 
 #[repr(C)]
-#[derive(Copy, Clone, Pod, Zeroable)]
+#[derive(Copy, Clone, Pod, Zeroable, NoUninit)]
 struct Vertex {
     position: [f32; 2],
     color: [f32; 4],
@@ -157,6 +157,7 @@ impl State {
             },
             depth_stencil: None,
             multisample: wgpu::MultisampleState::default(),
+            multiview: None,
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
                 entry_point: "fs",
@@ -230,15 +231,15 @@ impl State {
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
                     resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: DESK[0] as f64,
-                            g: DESK[1] as f64,
-                            b: DESK[2] as f64,
-                            a: DESK[3] as f64,
-                        }),
-                        store: true,
-                    },
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(wgpu::Color {
+                                r: DESK[0] as f64,
+                                g: DESK[1] as f64,
+                                b: DESK[2] as f64,
+                                a: DESK[3] as f64,
+                            }),
+                            store: wgpu::StoreOp::Store,
+                        },
                 })],
                 depth_stencil_attachment: None,
                 occlusion_query_set: None,
