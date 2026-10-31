@@ -108,7 +108,6 @@ impl State {
                     label: None,
                     required_features: wgpu::Features::empty(),
                     required_limits: wgpu::Limits::default(),
-                    trace: wgpu::Trace::None,
                 },
                 None,
             )
@@ -212,7 +211,7 @@ impl State {
         self.rebuild();
     }
 
-    fn input(&mut self, _event: &WindowEvent) -> bool {
+    fn input(&mut self, _event: &winit::event::WindowEvent) -> bool {
         false
     }
 
