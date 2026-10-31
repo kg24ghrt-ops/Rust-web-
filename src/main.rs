@@ -87,7 +87,7 @@ struct State {
 }
 
 impl State {
-    async fn new(window: &winit::window::Window) -> Self {
+    async fn new(window: &'static winit::window::Window) -> Self {
         let size = window.inner_size();
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::PRIMARY,
@@ -169,18 +169,19 @@ impl State {
             }),
         });
 
+        let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("vertices"),
+            size: 0,
+            usage: wgpu::BufferUsages::VERTEX,
+            mapped_at_creation: false,
+        });
         let mut state = Self {
             surface,
             device,
             queue,
             config,
             pipeline,
-            vertex_buffer: device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("vertices"),
-                size: 0,
-                usage: wgpu::BufferUsages::VERTEX,
-                mapped_at_creation: false,
-            }),
+            vertex_buffer,
             vertex_count: 0,
             size,
         };
@@ -368,15 +369,19 @@ fn run_app() {
         window::WindowBuilder,
     };
 
+    // Leak the window so it lives for 'static; wgpu's Surface borrows the
+    // window handle, and State stores a Surface<'static>.
     let event_loop = EventLoop::new().unwrap();
-    let window = WindowBuilder::new()
-        .with_title("B5 School Notebook Paper")
-        .build(&event_loop)
-        .unwrap();
+    let window = Box::leak(Box::new(
+        WindowBuilder::new()
+            .with_title("B5 School Notebook Paper")
+            .build(&event_loop)
+            .unwrap(),
+    ));
 
     // Device creation is async; block the current thread on Tokio's executor.
     let handle = tokio::runtime::Handle::current();
-    let mut state = handle.block_on(State::new(&window));
+    let mut state = handle.block_on(State::new(window));
 
     event_loop
         .run(move |event, elwt| {
