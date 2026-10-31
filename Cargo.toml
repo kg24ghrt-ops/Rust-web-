@@ -1,6 +1,10 @@
 [package]
 name = "web"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
+wgpu = "0.20"
+winit = "0.30"
+tokio = { version = "1", features = ["full"] }
+bytemuck = "1"
