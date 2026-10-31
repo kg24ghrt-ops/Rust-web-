@@ -49,12 +49,11 @@ struct Vertex {
     color: [f32; 4],
 }
 
-const VERTEX_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> =
-    wgpu::VertexBufferLayout {
-        array_stride: std::mem::size_of::<Vertex>() as u64,
-        step_mode: wgpu::VertexStepMode::Vertex,
-        attributes: &wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x4],
-    };
+const VERTEX_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
+    array_stride: std::mem::size_of::<Vertex>() as u64,
+    step_mode: wgpu::VertexStepMode::Vertex,
+    attributes: &wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x4],
+};
 
 const SHADER: &str = r#"
 struct VertexInput {
@@ -219,7 +218,9 @@ impl State {
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let frame = self.surface.get_current_texture()?;
-        let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = frame
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
@@ -290,7 +291,14 @@ fn build_vertices(width: u32, height: u32) -> Vec<Vertex> {
     for i in 0..n {
         let t = i as f32 / (n - 1) as f32;
         let cy = line_top * (1.0 - t) + line_bottom * t;
-        push_rect(&mut v, mx + ph * 0.07, cy - thick / 2.0, x1, cy + thick / 2.0, RULE);
+        push_rect(
+            &mut v,
+            mx + ph * 0.07,
+            cy - thick / 2.0,
+            x1,
+            cy + thick / 2.0,
+            RULE,
+        );
     }
 
     v
