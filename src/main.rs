@@ -231,15 +231,15 @@ impl State {
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
                     resolve_target: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color {
-                                r: DESK[0] as f64,
-                                g: DESK[1] as f64,
-                                b: DESK[2] as f64,
-                                a: DESK[3] as f64,
-                            }),
-                            store: wgpu::StoreOp::Store,
-                        },
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: DESK[0] as f64,
+                            g: DESK[1] as f64,
+                            b: DESK[2] as f64,
+                            a: DESK[3] as f64,
+                        }),
+                        store: wgpu::StoreOp::Store,
+                    },
                 })],
                 depth_stencil_attachment: None,
                 occlusion_query_set: None,
