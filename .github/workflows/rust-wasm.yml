@@ -1,0 +1,107 @@
+
+name: Rust WebAssembly CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-wasm-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  wasm-build:
+    name: Compile Rust to WebAssembly
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt, clippy
+
+      - name: Show toolchain versions
+        run: |
+          rustc --version
+          cargo --version
+          rustup target list --installed
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: wasm-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('rust-toolchain.toml') }}
+          restore-keys: |
+            wasm-${{ runner.os }}-
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy
+        run: cargo clippy --locked --target wasm32-unknown-unknown --all-targets -- -D warnings
+
+      - name: Compile WebAssembly release
+        run: |
+          cargo build \
+            --locked \
+            --release \
+            --target wasm32-unknown-unknown
+
+      - name: Run native Rust tests
+        run: cargo test --locked --release
+
+      - name: Prepare WebAssembly artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p dist/wasm
+
+          find target/wasm32-unknown-unknown/release \
+            -maxdepth 1 \
+            -type f \
+            -name '*.wasm' \
+            -exec cp {} dist/wasm/ \;
+
+          if ! find dist/wasm -maxdepth 1 -name '*.wasm' | grep -q .; then
+            echo "ERROR: No WebAssembly binaries were produced."
+            exit 1
+          fi
+
+          echo "Generated WebAssembly files:"
+          ls -lh dist/wasm/
+
+      - name: Validate WebAssembly files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for file in dist/wasm/*.wasm; do
+            echo "Checking: $file"
+            file "$file"
+          done
+
+      - name: Upload WebAssembly artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: rust-wasm-${{ github.sha }}
+          path: dist/wasm/
+          if-no-files-found: error
+          retention-days: 30
