@@ -19,11 +19,6 @@ use std::borrow::Cow;
 
 use bytemuck::{Pod, Zeroable};
 use wgpu::util::DeviceExt;
-use winit::{
-    event::*,
-    event_loop::{ControlFlow, EventLoop},
-    window::WindowBuilder,
-};
 
 // B5 paper dimensions in millimetres.
 const B5_WIDTH_MM: f32 = 176.0;
@@ -368,6 +363,12 @@ fn main() {
 
 #[cfg(not(target_family = "wasm"))]
 fn run_app() {
+    use winit::{
+        event::*,
+        event_loop::{ControlFlow, EventLoop},
+        window::WindowBuilder,
+    };
+
     let event_loop = EventLoop::new().unwrap();
     let window = WindowBuilder::new()
         .with_title("B5 School Notebook Paper")
