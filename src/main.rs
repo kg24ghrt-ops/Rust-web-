@@ -17,7 +17,7 @@
 
 use std::borrow::Cow;
 
-use bytemuck::{NoUninit, Pod, Zeroable};
+use bytemuck::{Pod, Zeroable};
 use wgpu::util::DeviceExt;
 use winit::{
     event::*,
@@ -43,11 +43,14 @@ const MARGIN_FRAC: f32 = 0.05; // left margin width as fraction of paper height
 const RULE_COUNT: usize = 34; // number of ruled lines
 
 #[repr(C)]
-#[derive(Copy, Clone, Pod, Zeroable, NoUninit)]
+#[derive(Copy, Clone)]
 struct Vertex {
     position: [f32; 2],
     color: [f32; 4],
 }
+
+unsafe impl Zeroable for Vertex {}
+unsafe impl Pod for Vertex {}
 
 const VERTEX_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
     array_stride: std::mem::size_of::<Vertex>() as u64,
@@ -126,6 +129,7 @@ impl State {
             present_mode: wgpu::PresentMode::Fifo,
             alpha_mode: wgpu::CompositeAlphaMode::Auto,
             view_formats: vec![],
+            desired_maximum_frame_latency: 2,
         };
         surface.configure(&device, &config);
 
@@ -145,6 +149,7 @@ impl State {
                 module: &shader,
                 entry_point: "vs",
                 buffers: &[VERTEX_BUFFER_LAYOUT],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
@@ -166,6 +171,7 @@ impl State {
                     blend: Some(wgpu::BlendState::REPLACE),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
             }),
         });
 
